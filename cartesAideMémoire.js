@@ -303,7 +303,7 @@ var divQuestion=document.getElementById('divQuestion')
 var pQuestion=document.getElementById('question')
 var imgQuestion=document.getElementById('imgQuestion')
 
-boutonQuestionSuivante=document.getElementById('boutonQuestionSuivante')
+var boutonQuestionSuivante=document.getElementById('boutonQuestionSuivante')
 boutonQuestionSuivante.addEventListener("click", () => {
     passerLaQuestion()
     miseÀJour()
