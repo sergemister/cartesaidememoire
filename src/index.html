@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Cartes aide-mémoire</title>
+    <link rel="stylesheet" href="cartesAideMémoire.css" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto" />
+  </head>
+  <body>
+    <div id="divConfiguration">
+      <p id="titre" class="titre">Cartes aide-mémoire</p>
+      <p id="soustitre" class="soustitre"></p>
+      <div id="paramètresConfiguration">
+	<label for="documentÀOuvrir">Document à utiliser:</label>
+	<input id="documentÀOuvrir" type="file"></input>
+	<label for="nombreDeRépétitions">Nombre de répétitions de chaque question:</label>
+	<input id="nombreDeRépétitions" class="inputNombre" value="3"></input>
+	<label for="choisirAuHazard">Choisir au hazard:</label>
+	<input id="choisirAuHazard" type="checkbox" class="checkbox" checked="true"></input>
+      </div>
+      <p class="centrer">
+	<button id="boutonCommencer">Commencer</button>
+      </p>
+      <p class="centrer">
+	<button id="modifierLesQuestions">Modifier les questions</button>
+      </p>
+    </div>
+    <div id="divQuestion" class="divCarte">
+      <div class="textePrincipale question">
+	<p id="question"></p>
+	<img id="imgQuestion" class="imagePrincipale"></img>
+      </div>
+      <button id="boutonQuestionSuivante" class="celluleTableau">
+	<span class="material-symbols-outlined">arrow_forward</span>
+      </button>
+      <button id="boutonVoireAutreFace" class="celluleTableau">
+	<span class="material-symbols-outlined">360</span>
+      </button>
+      <button id="boutonConfiguration-question" class="celluleTableau">
+	<span class="material-symbols-outlined">settings</span>
+      </button>
+    </div>
+    <div id="divRéponse" class="divCarte">
+      <div class="textePrincipale réponse">
+	<p id="réponse"></p>
+	<img id="imgRéponse" class="imagePrincipale"></img>
+      </div>
+      <button id="boutonRevoirLaQuestion" class="celluleTableau">
+	<span class="material-symbols-outlined">arrow_back</span>
+      </button>
+      <div class="celluleTableau">
+	<button id="boutonRaté">
+	  <span class="material-symbols-outlined">dangerous</span>
+	</button>
+	<button id="boutonJuste">
+	  <span class="material-symbols-outlined">check</span>
+	</button>
+      </div>
+      <div class="celluleTableau">
+	<button id="boutonConfiguration-réponse">
+	  <span class="material-symbols-outlined">settings</span>
+	</button>
+      </div>
+    </div>
+    <div id="divÉditeur">
+      <p class="titre">Éditeur</p>
+      <div id="éditeur_caractéristiques">
+	<label for="éditeur_titre">Titre:</label>
+	<input id="éditeur_titre" type="text" value="" length="80"></input>
+	<label for="éditeur_soustitre">Sous-titre:</label>
+	<input id="éditeur_soustitre" type="text" value="" length="80"></input>
+	<label for="éditeur_font">Font:</label>
+	<input id="éditeur_font" type="text" value="" length="20"></input>
+	<label for="éditeur_couleurFond">Couleur de fond:</label>
+	<input id="éditeur_couleurFond" type="text" value="" length="20"></input>
+	<label for="éditeur_couleurQuestion">Couleur de question:</label>
+	<input id="éditeur_couleurQuestion" type="text" value="" length="20"></input>
+	<label for="éditeur_couleurRéponse">Couleur de réponse:</label>
+	<input id="éditeur_couleurRéponse" type="text" value="" length="20"></input>
+      </div>
+      <hr />
+      <div id="questionsÉditeur"></div>
+      <hr />
+      <p class="centrer">
+	<a id="lienSauvegarder" download="cartesAideMémoire.json" href=""><button id="sauvegarder">Sauvegarder</button></a>
+	<button id="retourDeLÉditeur">Retourner</button>
+      </p>
+    </div>
+    <div>
+      <hr />
+      <p id="statistiques" class="centrer"></p>
+    </div>
+    <script src="cartesAideMémoire.js"></script>
+  </body>
+</html>

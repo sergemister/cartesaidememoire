@@ -1,0 +1,113 @@
+body {
+    font-family: 'Roboto', serif;
+}
+
+p {
+    margin-top: 5px;
+    margin-bottom: 5px;
+}
+
+.textePrincipale {
+    font-size: 36px;
+    grid-column: 1 / span 3;
+    min-width: 500px;
+    min-height: 250px;
+    margin-left: auto;
+    margin-right: auto;
+    margin-top: 10px;
+    margin-bottom: 10px;
+    padding-left: 10px;
+    padding-right: 10px;
+    padding-top: 10px;
+    padding-bottom: 10px;
+    border: thick double #000000;
+}
+
+.divCarte {
+    display: grid;
+    grid-template-columns: 1fr 2fr 1fr;
+}
+
+.inputNombre {
+    max-width: 100px;
+}
+
+.checkbox {
+    max-width: 20px;
+}
+
+.centrer {
+    text-align: center;
+}
+
+.celluleTableau {
+    margin-left: auto;
+    margin-right: auto;
+}
+
+button.celluleTableau, .celluleTableau button {
+    width: 200px;
+    height: 50px;
+    border-radius: 20px;
+    font-size: 35px;
+}
+
+.titre {
+    margin-top: 10px;
+    margin-bottom: 10px;
+    text-align: center;
+    font-size: xxx-large;
+}
+
+.soustitre {
+    text-align: center;
+    font-size: xx-large;
+}
+
+.titreDeColonne {
+    text-align: center;
+    font-weight: bold;
+    font-size: larger;
+}
+
+#paramètresConfiguration {
+    display: grid;
+    grid-template-columns: 320px 170px;
+    row-gap: 10px;
+    text-align: right;
+    border: solid #000000;
+    width: 490px;
+    margin-left: auto;
+    margin-right: auto;
+    align-items: center;
+}
+
+#éditeur_caractéristiques {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    max-width: 80%;
+    text-align: right;
+    row-gap: 10px;
+}
+
+label {
+    padding-right: 10px;
+}
+
+#questionsÉditeur {
+    display: grid;
+    grid-template-columns: 1fr 150px 1fr 150px;
+    row-gap: 10px;
+}
+
+.imagePrincipale {
+    object-fit: contain;
+    height: 100%;
+    width: 100%;
+    max-width: 480px;
+    max-height: 230px;
+}
+
+.hidden {
+    display: none;
+}
