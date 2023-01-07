@@ -8,26 +8,40 @@
   </head>
   <body>
     <div id="divConfiguration">
-      <p id="titre" class="titre">Cartes aide-mémoire</p>
-      <p id="soustitre" class="soustitre"></p>
-      <div id="paramètresConfiguration">
-	<label for="documentÀOuvrir">Document à utiliser:</label>
-	<input id="documentÀOuvrir" type="file"></input>
-	<label for="nombreDeRépétitions">Nombre de répétitions de chaque question:</label>
-	<input id="nombreDeRépétitions" class="inputNombre" value="3"></input>
-	<label for="choisirAuHazard">Choisir au hazard:</label>
-	<input id="choisirAuHazard" type="checkbox" class="checkbox" checked="true"></input>
+      <p class="titre">Cartes aide-mémoire</p>
+      <div id="paramètresConfiguration" class="boiteConfiguration">
+	<label for="inputNombreDeRépétitions">Nombre de répétitions de chaque question:</label>
+	<input id="inputNombreDeRépétitions" class="inputNombre" value="3"></input>
+	<label for="inputChoisirAuHazard">Choisir au hazard:</label>
+	<input id="inputChoisirAuHazard" type="checkbox" class="checkbox" checked="true"></input>
+	<div id="conteneurDeListeDEnsembles">
+	  Ensembles:
+	  <br />
+	  <div id="divListeDEnsembles"></div>
+	</div>
       </div>
+      <br />
+      <div class="boiteConfiguration">
+	<p class="centrer">
+	  <button id="boutonNouvelEnsemble">Créer un nouvel ensemble de questions</button>
+	</p>
+	<p class="centrer">
+	  <button id="boutonOuvrirDocument">Ouvrir un document</button>
+	</p>
+	<input id="documentÀOuvrir" class="hidden" type="file"></input>
+	<p class="centrer">
+	  <a id="lienSauvegarderCollection" download="cartesAideMémoire.json" href=""><button id="sauvegarderLaCollection">Sauvegarder la collection</button></a>
+	  
+	</p>
+      </div>
+      <br />
       <p class="centrer">
 	<button id="boutonCommencer">Commencer</button>
-      </p>
-      <p class="centrer">
-	<button id="modifierLesQuestions">Modifier les questions</button>
       </p>
     </div>
     <div id="divQuestion" class="divCarte">
       <div class="textePrincipale question">
-	<p id="question"></p>
+	<p id="pQuestion"></p>
 	<img id="imgQuestion" class="imagePrincipale"></img>
       </div>
       <button id="boutonQuestionSuivante" class="celluleTableau">
@@ -36,13 +50,13 @@
       <button id="boutonVoireAutreFace" class="celluleTableau">
 	<span class="material-symbols-outlined">360</span>
       </button>
-      <button id="boutonConfiguration-question" class="celluleTableau">
+      <button id="boutonConfiguration_question" class="celluleTableau">
 	<span class="material-symbols-outlined">settings</span>
       </button>
     </div>
     <div id="divRéponse" class="divCarte">
       <div class="textePrincipale réponse">
-	<p id="réponse"></p>
+	<p id="pRéponse"></p>
 	<img id="imgRéponse" class="imagePrincipale"></img>
       </div>
       <button id="boutonRevoirLaQuestion" class="celluleTableau">
@@ -57,7 +71,7 @@
 	</button>
       </div>
       <div class="celluleTableau">
-	<button id="boutonConfiguration-réponse">
+	<button id="boutonConfiguration_réponse">
 	  <span class="material-symbols-outlined">settings</span>
 	</button>
       </div>
@@ -65,30 +79,33 @@
     <div id="divÉditeur">
       <p class="titre">Éditeur</p>
       <div id="éditeur_caractéristiques">
-	<label for="éditeur_titre">Titre:</label>
-	<input id="éditeur_titre" type="text" value="" length="80"></input>
-	<label for="éditeur_soustitre">Sous-titre:</label>
-	<input id="éditeur_soustitre" type="text" value="" length="80"></input>
-	<label for="éditeur_font">Font:</label>
-	<input id="éditeur_font" type="text" value="" length="20" title="Le nom d'un font de 'Google Fonts'"></input>
-	<label for="éditeur_couleurFond">Couleur de fond:</label>
-	<input id="éditeur_couleurFond" type="text" value="" length="20" title="Couleur en hexadécimal (rrggbb)"></input>
-	<label for="éditeur_couleurQuestion">Couleur de question:</label>
-	<input id="éditeur_couleurQuestion" type="text" value="" length="20" title="Couleur en hexadécimal (rrggbb)"></input>
-	<label for="éditeur_couleurRéponse">Couleur de réponse:</label>
-	<input id="éditeur_couleurRéponse" type="text" value="" length="20" title="Couleur en hexadécimal (rrggbb)"></input>
+	<label for="inputÉditeurTitre">Titre:</label>
+	<input id="inputÉditeurTitre" type="text" value="" length="80"></input>
+	<label for="taÉditeurDescription">Description:</label>
+	<textarea id="taÉditeurDescription" length="80" rows="5"></textarea>
+	<label for="inputÉditeurFont">Font:</label>
+	<input id="inputÉditeurFont" type="text" value="" length="20" title="Le nom d'un font de 'Google Fonts'"></input>
+	<label for="inputÉditeurCouleurFond">Couleur de fond:</label>
+	<input id="inputÉditeurCouleurFond" type="text" value="" length="20" title="Couleur en hexadécimal (rrggbb)"></input>
+	<label for="inputÉditeurCouleurQuestion">Couleur de question:</label>
+	<input id="inputÉditeurCouleurQuestion" type="text" value="" length="20" title="Couleur en hexadécimal (rrggbb)"></input>
+	<label for="inputÉditeurCouleurRéponse">Couleur de réponse:</label>
+	<input id="inputÉditeurCouleurRéponse" type="text" value="" length="20" title="Couleur en hexadécimal (rrggbb)"></input>
       </div>
       <hr />
-      <div id="questionsÉditeur"></div>
+      <div id="divÉditeurQuestions"></div>
       <hr />
       <p class="centrer">
+	<button id="boutonRetourDeLÉditeur">Retourner</button>
+      </p>
+      <p class="centrer">
 	<a id="lienSauvegarder" download="cartesAideMémoire.json" href=""><button id="sauvegarder">Sauvegarder</button></a>
-	<button id="retourDeLÉditeur">Retourner</button>
+	<button id="boutonEffacer">Effacer</button>
       </p>
     </div>
     <div>
       <hr />
-      <p id="statistiques" class="centrer"></p>
+      <p id="pStatistiques" class="centrer"></p>
     </div>
     <script src="cartesAideMémoire.js"></script>
   </body>

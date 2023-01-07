@@ -1,8 +1,5 @@
 "use strict";
 
-/* Vrai quand la configuration a été mise à jour, et donc que les vues doivent être re-créées */
-var configurationMiseÀJour=false
-
 /* Constantes et stylesheet pour controller les couleurs et le font */
 const couleurFondDéfaut='adfadf'
 const couleurQuestionDéfaut='8fbf00'
@@ -24,9 +21,9 @@ stylesheetDynamique.sheet.insertRule(".textePrincipale { font-family: '"+fontDé
 
 /* Modèle */
 
-/* La liste de cartes.  Contient:
+/* La collection d'ensembles de cartes.  Chaque membre contient:
     - titre - Le nom de l'ensemble de cartes
-    - soustitre - Un sous-titre pour l'ensemble de cartes
+    - description - Une description de l'ensemble de cartes
     - font - Le nom du font Google utilisé pour les questions et réponses
     - couleurFond - Couleur de fond (6 charactères hexadécimaux)
     - couleurQuestion - Couleur pour le fond de la carte, côté question
@@ -36,7 +33,7 @@ stylesheetDynamique.sheet.insertRule(".textePrincipale { font-family: '"+fontDé
         - réponse - Le texte de la réponse
         - questionEstURL - Vrai si question contient un URL d'une image plutôt que du texte
         - réponseEstURL - Vrai si la réponse contient un URL d'une image plutôt que du texte */
-var cartes={questions:[]}
+var collection=[]
 
 var nombreDeRépétitions=3 // Le nombre de fois qu'il faut demander chaque question, chaque ronde
 
@@ -48,7 +45,8 @@ var mode=MODE_EN_ORDRE // Un de MODE_EN_ORDRE, MODE_AU_HAZARD
   - questions - liste d'informations au sujet de chaque question.  La
                 question choisie est la première et va à la fin de la liste de questions
                 restantes quand une réponse est donnée.  Pour chaque question, contient:
-     - index - index de la carte dans la liste de cartes
+     - collection - index de l'ensemble de cartes dans la collection
+     - index - index de la carte dans l'ensemble de cartes
      - nombreJustes - nombre de fois qu'on a donné une réponse juste pour cette carte
      - nombreDErreurs - nombre de fois qu'on a donné une réponse fausse pour cette carte
   - questionsRestantes - le nombre de questions restant à poser.  Elles sont premières
@@ -64,6 +62,13 @@ var étatGlobal={
     rondesFaites: 0 // Le nombre de fois que toutes les questions ont été acceptées
 }
 
+/* Une liste de boolean indiquant si les cartes de l'ensemble correspondant
+ * devraient être montrées */
+var ensembleActif=[]
+
+/* l'index dans la collection de l'ensemble de cartes à modifier dans l'éditeur */
+var ensembleÀÉditer
+
 /* Constantes correspondant aux vues du programme */
 const VUE_CONFIGURATION=0
 const VUE_QUESTION=1
@@ -72,12 +77,26 @@ const VUE_ÉDITEUR=3
 
 var vue=VUE_CONFIGURATION // Le partie de l'interface à monter
 
-/* Ouvre un document JSON et configure les cartes */
-function ouvrirDocument(leDocument) {
+/* Ouvre un document JSON et l'ajoute à la collection. La fonction
+   callback est appelée quand le document est lu. Deux formats sont
+   utilisés:
+     - Une collection (un Array)
+     - Un ensemble de cartes (un objet)
+*/
+function ouvrirDocument(leDocument,callback) {
     var fileReader=new FileReader()
     fileReader.addEventListener("load",(event)=>{
 	try {
-	    cartes=JSON.parse(fileReader.result)
+	    var cartes=JSON.parse(fileReader.result)
+	    if (!Array.isArray(cartes)) {
+		// Transformer l'ensemble à une collection contenant un ensemble
+		cartes=[cartes]
+	    }
+	    collection=collection.concat(cartes)
+	    for (var i=0;i<cartes.length;i++) {
+		ensembleActif.push(true)
+	    }
+	    callback()
 	} catch (e) {
 	    alert(e)
 	}
@@ -85,21 +104,33 @@ function ouvrirDocument(leDocument) {
     fileReader.readAsText(leDocument)
 }
 
-/* Initialize étatDeRonde et choisis la première carte */
+/* Initialize étatDeRonde et choisis la première carte.  Rend true s'il n'y
+   a pas de cartes dans la collection */
 function initializerLaRonde() {
     étatDeRonde={}
     étatDeRonde.questions=[]
-    for (var i=0;i<cartes.questions.length;i++) {
-	étatDeRonde.questions[i]={
-	    index: i,
-	    nombreJustes: 0,
-	    nombreDErreurs: 0
+    for (var indexEnsemble=0;indexEnsemble<collection.length;indexEnsemble++) {
+	if (!ensembleActif[indexEnsemble]) {
+	    continue
+	}
+	for (var i=0;i<collection[indexEnsemble].questions.length;i++) {
+	    étatDeRonde.questions.push({
+		collection: indexEnsemble,
+		index: i,
+		nombreJustes: 0,
+		nombreDErreurs: 0
+	    })
 	}
     }
-    étatDeRonde.questionsRestantes=cartes.questions.length
+    étatDeRonde.questionsRestantes=étatDeRonde.questions.length
     étatDeRonde.nombreJustes=0
     étatDeRonde.nombreDErreurs=0
+    if (étatDeRonde.questionsRestantes==0) {
+	étatDeRonde=undefined
+	return true
+    }
     choisirUneNouvelleCarte(true)
+    return false
 }
 
 /* Modifie l'état de ronde pour que la question à l'index 'de' soît à
@@ -168,6 +199,11 @@ function passerLaQuestion() {
     choisirUneNouvelleCarte(false)
 }
 
+function effacerEnsemble(index) {
+    collection.splice(index,1)
+    ensembleActif.splice(index,1)
+}
+
 /* Controlleurs - commun */
 
 /* Vérifie la syntaxe de la couleur désirée.  Rend désirée si elle est juste, sinon défaut */
@@ -185,7 +221,7 @@ function couleur(désirée, défaut) {
 
 /* Vérifie la syntaxe du font désiré.  Rend désiré si elle est juste, sinon défaut */
 function fontDésiré(désiré, défaut) {
-    if (cartes.font=='') {
+    if (désiré=='') {
 	return défaut
     }
     for (var i=0;i<désiré.length;i++) {
@@ -204,18 +240,34 @@ function cacherToutesLesVues() {
 }
 
 function miseÀJour() {
-    if (configurationMiseÀJour) {
-	configurationMiseÀJour=false
-	stylesheetDynamique.sheet.deleteRule(0)
-	stylesheetDynamique.sheet.deleteRule(0)
-	stylesheetDynamique.sheet.deleteRule(0)
-	stylesheetDynamique.sheet.deleteRule(0)
-	stylesheetDynamique.sheet.insertRule("body { background-color: #"+couleur(cartes.couleurFond,couleurFondDéfaut)+"; }",0)
-	stylesheetDynamique.sheet.insertRule(".question { background-color: #"+couleur(cartes.couleurQuestion,couleurQuestionDéfaut)+"; }",0)
-	stylesheetDynamique.sheet.insertRule(".réponse { background-color: #"+couleur(cartes.couleurRéponse,couleurRéponseDéfaut)+"; }",0)
-	stylesheetDynamique.sheet.insertRule(".textePrincipale { font-family: '"+fontDésiré(cartes.font,fontDéfaut)+"'; }",0)
-	stylesheetFont.href=fontURLDeBase+encodeURIComponent(fontDésiré(cartes.font,fontDéfaut))
+    var couleurFond
+    var couleurQuestion
+    var couleurRéponse
+    var font
+
+    if (étatDeRonde==undefined || vue==VUE_CONFIGURATION || vue==VUE_ÉDITEUR) {
+	couleurFond=couleurFondDéfaut
+	couleurQuestion=couleurQuestionDéfaut
+	couleurRéponse=couleurRéponseDéfaut
+	font=fontDéfaut
+    } else {
+	var question=étatDeRonde.questions[0]
+	var cartes=collection[question.collection]
+	couleurFond=couleur(cartes.couleurFond,couleurFondDéfaut)
+	couleurQuestion=couleur(cartes.couleurQuestion,couleurQuestionDéfaut)
+	couleurRéponse=couleur(cartes.couleurRéponse,couleurRéponseDéfaut)
+	font=fontDésiré(cartes.font,fontDéfaut)
     }
+    
+    stylesheetDynamique.sheet.deleteRule(0)
+    stylesheetDynamique.sheet.deleteRule(0)
+    stylesheetDynamique.sheet.deleteRule(0)
+    stylesheetDynamique.sheet.deleteRule(0)
+    stylesheetDynamique.sheet.insertRule("body { background-color: #"+couleurFond+"; }",0)
+    stylesheetDynamique.sheet.insertRule(".question { background-color: #"+couleurQuestion+"; }",0)
+    stylesheetDynamique.sheet.insertRule(".réponse { background-color: #"+couleurRéponse+"; }",0)
+    stylesheetDynamique.sheet.insertRule(".textePrincipale { font-family: '"+font+"'; }",0)
+    stylesheetFont.href=fontURLDeBase+encodeURIComponent(font)
     if (vue==VUE_CONFIGURATION) {
 	miseÀJourVueConfiguration()
     } else if (vue==VUE_QUESTION) {
@@ -236,24 +288,25 @@ function montrerLaConfiguration() {
     miseÀJour()
 }
 
-function lireConfigurationEtCommencerUneRonde() {
-    if (cartes.questions.length==0) {
-	alert("Il n'y a pas de questions!")
-	return
-    }
+/* Rend true s'il y a une erreur de configuration */
+function lireConfiguration() {
     try {
 	nombreDeRépétitions=parseInt(inputNombreDeRépétitions.value)
     } catch (e) {
 	alert(e)
-	return
+	return true
     }
     if (inputChoisirAuHazard.checked) {
 	mode=MODE_AU_HAZARD
     } else {
 	mode=MODE_EN_ORDRE
     }
-    initializerLaRonde()
-    montrerLaQuestion()
+    var i=0
+    for (var checkbox=divListeDEnsembles.firstChild;checkbox!=null;checkbox=checkbox.nextSibling) {
+	ensembleActif[i]=checkbox.checked
+	checkbox=checkbox.nextSibling
+	i++
+    }
 }
 
 function montrerLaProchaineQuestionRéponseJuste() {
@@ -270,49 +323,73 @@ function montrerLaProchaineQuestionRéponseFausse() {
 }
 
 /** vue configuration **/
-var divConfiguration=document.getElementById('divConfiguration')
-var pTitre=document.getElementById('titre')
-var pSoustitre=document.getElementById('soustitre')
-
-var boutonMontrerÉditeur=document.getElementById('modifierLesQuestions')
-boutonMontrerÉditeur.addEventListener('click', montrerÉditeur)
-
-var inputNombreDeRépétitions=document.getElementById('nombreDeRépétitions')
-var inputChoisirAuHazard=document.getElementById('choisirAuHazard')
-var documentÀOuvrir=document.getElementById('documentÀOuvrir')
-
-var boutonCommencer=document.getElementById('boutonCommencer')
-boutonCommencer.addEventListener("click",lireConfigurationEtCommencerUneRonde)
-
-documentÀOuvrir.addEventListener("change",() => {
-    ouvrirDocument(documentÀOuvrir.files[0])
-    miseÀJour()
+boutonOuvrirDocument.addEventListener('click', () => {
+    documentÀOuvrir.click()
 })
 
-function miseÀJourVueConfiguration() {
-    if ('titre' in cartes) {
-	pTitre.innerText=cartes.titre
+boutonNouvelEnsemble.addEventListener('click', () => {
+    lireConfiguration()
+    ensembleÀÉditer=collection.length
+    ensembleActif[collection.length]=true
+    montrerÉditeur()
+})
+
+lienSauvegarderCollection.addEventListener('click',() => {
+    lienSauvegarderCollection.href='data:application/octet-stream,'+encodeURIComponent(JSON.stringify(collection))
+})
+
+boutonCommencer.addEventListener("click",() => {
+    if (lireConfiguration()) {
+	return
     }
-    if ('soustitre' in cartes) {
-	pSoustitre.innerText=cartes.soustitre
+    if (initializerLaRonde()) {
+	alert("Il n'y a pas de questions!")
+	return
+    }
+    montrerLaQuestion()
+})
+
+documentÀOuvrir.addEventListener("change",() => {
+    ouvrirDocument(documentÀOuvrir.files[0], miseÀJour)
+})
+
+function créerOuvreurDÉditeur(index) {
+    return function (event) {
+	lireConfiguration()
+	ensembleÀÉditer=index
+	montrerÉditeur()
+	event.preventDefault()
+    }
+}
+
+function miseÀJourVueConfiguration() {
+    divListeDEnsembles.replaceChildren()
+    for (var i=0;i<collection.length;i++) {
+	var checkbox=document.createElement("input")
+	checkbox.type="checkbox"
+	if (ensembleActif[i]) {
+	    checkbox.checked=true
+	}
+	divListeDEnsembles.appendChild(checkbox)
+	var link=document.createElement("a")
+	link.href="#"
+	if ("description" in collection[i] && collection[i].description!="") {
+	    link.title=collection[i].description
+	}
+	link.appendChild(document.createTextNode(collection[i].titre))
+	link.addEventListener("click",créerOuvreurDÉditeur(i))
+	divListeDEnsembles.appendChild(link)
     }
 }
 
 /* Vue et controlleurs question */
-var divQuestion=document.getElementById('divQuestion')
-var pQuestion=document.getElementById('question')
-var imgQuestion=document.getElementById('imgQuestion')
-
-var boutonQuestionSuivante=document.getElementById('boutonQuestionSuivante')
 boutonQuestionSuivante.addEventListener("click", () => {
     passerLaQuestion()
     miseÀJour()
 })
 
-var boutonVoireAutreFace=document.getElementById('boutonVoireAutreFace')
 boutonVoireAutreFace.addEventListener("click",montrerLaRéponse)
 
-var boutonConfiguration_question=document.getElementById('boutonConfiguration-question')
 boutonConfiguration_question.addEventListener('click', montrerLaConfiguration)
 
 function montrerLaQuestion() {
@@ -323,7 +400,8 @@ function montrerLaQuestion() {
 }
 
 function miseÀJourVueQuestion() {
-    var carte=cartes.questions[étatDeRonde.questions[0].index]
+    var question=étatDeRonde.questions[0]
+    var carte=collection[question.collection].questions[question.index]
     if (carte.questionEstURL) {
 	pQuestion.classList.add('hidden')
 	imgQuestion.classList.remove('hidden')
@@ -336,20 +414,12 @@ function miseÀJourVueQuestion() {
 }
 
 /* Vue et controlleurs réponse */
-var divRéponse=document.getElementById('divRéponse')
-var pRéponse=document.getElementById('réponse')
-var imgRéponse=document.getElementById('imgRéponse')
-
-var boutonRevoirLaQuestion=document.getElementById('boutonRevoirLaQuestion')
 boutonRevoirLaQuestion.addEventListener('click',montrerLaQuestion)
 
-var boutonJuste=document.getElementById('boutonJuste')
 boutonJuste.addEventListener('click',montrerLaProchaineQuestionRéponseJuste)
 
-var boutonRaté=document.getElementById('boutonRaté')
 boutonRaté.addEventListener('click',montrerLaProchaineQuestionRéponseFausse)
 
-var boutonConfiguration_réponse=document.getElementById('boutonConfiguration-réponse')
 boutonConfiguration_réponse.addEventListener('click', montrerLaConfiguration)
 
 function montrerLaRéponse() {
@@ -360,7 +430,8 @@ function montrerLaRéponse() {
 }
 
 function miseÀJourVueRéponse() {
-    var carte=cartes.questions[étatDeRonde.questions[0].index]
+    var question=étatDeRonde.questions[0]
+    var carte=collection[question.collection].questions[question.index]
     if (carte.réponseEstURL) {
 	pRéponse.classList.add('hidden')
 	imgRéponse.classList.remove('hidden')
@@ -373,23 +444,19 @@ function miseÀJourVueRéponse() {
 }
 
 /* Vue et controlleurs éditeur */
-var divÉditeur=document.getElementById('divÉditeur')
 
-var boutonRetourDeLÉditeur=document.getElementById('retourDeLÉditeur')
 boutonRetourDeLÉditeur.addEventListener('click',retourDeLÉditeur)
 
-var inputÉditeurTitre=document.getElementById('éditeur_titre')
-var inputÉditeurSoustitre=document.getElementById('éditeur_soustitre')
-var inputÉditeurFont=document.getElementById('éditeur_font')
-var inputÉditeurCouleurFond=document.getElementById('éditeur_couleurFond')
-var inputÉditeurCouleurQuestion=document.getElementById('éditeur_couleurQuestion')
-var inputÉditeurCouleurRéponse=document.getElementById('éditeur_couleurRéponse')
-var divÉditeurQuestions=document.getElementById('questionsÉditeur')
-
-var lienSauvegarder=document.getElementById('lienSauvegarder')
 lienSauvegarder.addEventListener('click',() => {
     générerListeDeCartes()
-    lienSauvegarder.href='data:application/octet-stream,'+encodeURIComponent(JSON.stringify(cartes))
+    lienSauvegarder.href='data:application/octet-stream,'+encodeURIComponent(JSON.stringify(collection[ensembleÀÉditer]))
+})
+
+boutonEffacer.addEventListener('click', () => {
+    if (window.confirm("Effacer cet ensemble?")) {
+	effacerEnsemble(ensembleÀÉditer)
+	montrerLaConfiguration()
+    }
 })
 
 function montrerÉditeur() {
@@ -405,9 +472,9 @@ function retourDeLÉditeur() {
 }
 
 function générerListeDeCartes() {
-    cartes={}
+    var cartes={}
     cartes.titre=inputÉditeurTitre.value
-    cartes.soustitre=inputÉditeurSoustitre.value
+    cartes.description=taÉditeurDescription.value
     cartes.font=inputÉditeurFont.value
     cartes.couleurFond=inputÉditeurCouleurFond.value
     cartes.couleurQuestion=inputÉditeurCouleurQuestion.value
@@ -436,7 +503,7 @@ function générerListeDeCartes() {
 	    réponseEstURL:réponseEstURL
 	})
     }
-    configurationMiseÀJour=true
+    collection[ensembleÀÉditer]=cartes
 }
 
 /* Ajoute un éditeur texte contenant le texte spécifié et des boutons
@@ -518,24 +585,13 @@ function créerAjouteurDImage(élémentFile, élémentTexte,boîteÀCocher) {
 }
 
 function miseÀJourVueÉditeur() {
-    if ('titre' in cartes) {
-	inputÉditeurTitre.value=cartes.titre
-    }
-    if ('soustitre' in cartes) {
-	inputÉditeurSoustitre.value=cartes.soustitre
-    }
-    if ('font' in cartes) {
-	inputÉditeurFont.value=cartes.font
-    }
-    if ('couleurFond' in cartes) {
-	inputÉditeurCouleurFond.value=cartes.couleurFond
-    }
-    if ('couleurQuestion' in cartes) {
-	inputÉditeurCouleurQuestion.value=cartes.couleurQuestion
-    }
-    if ('couleurRéponse' in cartes) {
-	inputÉditeurCouleurRéponse.value=cartes.couleurRéponse
-    }
+    var cartes=collection[ensembleÀÉditer]
+    inputÉditeurTitre.value=cartes!=undefined && 'titre' in cartes?cartes.titre:""
+    taÉditeurDescription.value=cartes!=undefined && 'description' in cartes?cartes.description:""
+    inputÉditeurFont.value=cartes!=undefined && 'font' in cartes?cartes.font:""
+    inputÉditeurCouleurFond.value=cartes!=undefined && 'couleurFond' in cartes?cartes.couleurFond:""
+    inputÉditeurCouleurQuestion.value=cartes!=undefined && 'couleurQuestion' in cartes?cartes.couleurQuestion:""
+    inputÉditeurCouleurRéponse.value=cartes!=undefined && 'couleurRéponse' in cartes?cartes.couleurRéponse:""
 
     divÉditeurQuestions.replaceChildren()
     var labelQuestion=document.createElement('p')
@@ -553,20 +609,21 @@ function miseÀJourVueÉditeur() {
     boutonAjouter.appendChild(document.createTextNode("+"))
     boutonAjouter.addEventListener('click', créerAjouteurDeQuestion(labelQuestion))
     var nextChild=divÉditeurQuestions.appendChild(boutonAjouter)
-    for (var i=0;i<cartes.questions.length; i++) {
-	nextChild=ajouterQuestion(nextChild,
-				 cartes.questions[i].question,
-				 cartes.questions[i].questionEstURL,
-				 cartes.questions[i].réponse,
-				 cartes.questions[i].réponseEstURL)
+    if (cartes!=undefined) {
+	for (var i=0;i<cartes.questions.length; i++) {
+	    nextChild=ajouterQuestion(nextChild,
+				      cartes.questions[i].question,
+				      cartes.questions[i].questionEstURL,
+				      cartes.questions[i].réponse,
+				      cartes.questions[i].réponseEstURL)
+	}
     }
-    if (cartes.questions.length==0) {
+    if (cartes==undefined || cartes.questions.length==0) {
 	ajouterQuestion(nextChild,"",false,"",false)
     }
 }
 
 /* Vue et controlleurs statistiques */
-var pStatistiques=document.getElementById('statistiques')
 
 function formatterRésultats(nombreJustes, nombreFaux) {
     var pourcentage="--"
@@ -585,10 +642,11 @@ function mettreStatistiquesÀJour() {
     }
 }
 
+montrerLaConfiguration()
+
 /* Quand on appuye sur reload ayant déjà ouvert un document, le
  * document est déjà sélectioné mais il reste à le lire */
 if (documentÀOuvrir.files.length!=0) {
-    ouvrirDocument(documentÀOuvrir.files[0])
+    ouvrirDocument(documentÀOuvrir.files[0],miseÀJour)
 }
 
-montrerLaConfiguration()

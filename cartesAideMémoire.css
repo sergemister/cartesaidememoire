@@ -8,9 +8,9 @@ p {
 }
 
 .textePrincipale {
-    font-size: 36px;
+    font-size: 24px;
     grid-column: 1 / span 3;
-    min-width: 500px;
+    width: 500px;
     min-height: 250px;
     margin-left: auto;
     margin-right: auto;
@@ -70,16 +70,30 @@ button.celluleTableau, .celluleTableau button {
     font-size: larger;
 }
 
+.boiteConfiguration {
+    border: solid #000000;
+    width: 490px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+#divListeDEnsembles {
+    display: grid;
+    grid-template-columns: 30px 1fr;
+}
+
 #paramètresConfiguration {
     display: grid;
     grid-template-columns: 320px 170px;
     row-gap: 10px;
     text-align: right;
-    border: solid #000000;
-    width: 490px;
-    margin-left: auto;
-    margin-right: auto;
     align-items: center;
+}
+
+#conteneurDeListeDEnsembles {
+    grid-column: 1 / span 2;
+    text-align: left;
+    margin-left: 5px;
 }
 
 #éditeur_caractéristiques {
@@ -94,7 +108,7 @@ label {
     padding-right: 10px;
 }
 
-#questionsÉditeur {
+#divÉditeurQuestions {
     display: grid;
     grid-template-columns: 1fr 150px 1fr 150px;
     row-gap: 10px;
