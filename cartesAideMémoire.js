@@ -280,6 +280,15 @@ function miseÀJour() {
     mettreStatistiquesÀJour()
 }
 
+/* Inverse le status de la classe "remplirÉcran", qui détermine si la
+   carte devrait remplir le plus de l'écran possible */
+function inverserPleinÉcran() {
+    divCarteQuestion.classList.toggle('remplirÉcran')
+    divCarteRéponse.classList.toggle('remplirÉcran')
+    imgQuestion.classList.toggle('remplirÉcran')
+    imgRéponse.classList.toggle('remplirÉcran')
+}
+
 /* Vue et Controlleur configuration */
 function montrerLaConfiguration() {
     cacherToutesLesVues()
@@ -390,6 +399,9 @@ boutonQuestionSuivante.addEventListener("click", () => {
 
 boutonVoireAutreFace.addEventListener("click",montrerLaRéponse)
 
+divCarteQuestion.addEventListener("click",montrerLaRéponse)
+divCarteQuestion.addEventListener("dblclick",inverserPleinÉcran)
+
 boutonConfiguration_question.addEventListener('click', montrerLaConfiguration)
 
 function montrerLaQuestion() {
@@ -415,6 +427,9 @@ function miseÀJourVueQuestion() {
 
 /* Vue et controlleurs réponse */
 boutonRevoirLaQuestion.addEventListener('click',montrerLaQuestion)
+
+divCarteRéponse.addEventListener("click",montrerLaQuestion)
+divCarteRéponse.addEventListener("dblclick",inverserPleinÉcran)
 
 boutonJuste.addEventListener('click',montrerLaProchaineQuestionRéponseJuste)
 
@@ -458,6 +473,11 @@ boutonEffacer.addEventListener('click', () => {
 	montrerLaConfiguration()
     }
 })
+
+/* Utiliser "event bubbling" pour avoir une seule fonction pour toutes
+ * les rangées de questions */
+divÉditeurQuestions.addEventListener('click', boutonsÉditeur)
+divÉditeurQuestions.addEventListener('change', inputOnChange)
 
 function montrerÉditeur() {
     cacherToutesLesVues()
@@ -525,7 +545,7 @@ function créerÉditeurQuestionOuRéponseEtBoutons(élément, texte, estUnURL) {
     divBoutons.appendChild(document.createTextNode("URL d'image"))
     divBoutons.appendChild(inputImage)
 
-    inputImage.addEventListener('change',créerAjouteurDImage(inputImage, ta, checkboxEstURL))
+    inputImage.inputImage=1
 
     élément.after(divBoutons)
     élément=élément.nextSibling
@@ -539,25 +559,23 @@ function ajouterQuestion(élément, texteQuestion, questionEstURL, texteRéponse
     élément=créerÉditeurQuestionOuRéponseEtBoutons(prochainÉlément, texteRéponse, réponseEstURL)
 
     var boutonAjouter=document.createElement("button")
-    boutonAjouter.addEventListener('click', créerAjouteurDeQuestion(taQuestion))
+    boutonAjouter.ajouter=1
     boutonAjouter.appendChild(document.createTextNode("+"))
     élément.appendChild(boutonAjouter)
 
     var boutonRetirer=document.createElement("button")
-    boutonRetirer.addEventListener('click', créerEnleveurDeQuestion(taQuestion))
+    boutonRetirer.retirer=1
     boutonRetirer.appendChild(document.createTextNode("-"))
     élément.appendChild(boutonRetirer)
     return élément
 }
 
-function créerAjouteurDeQuestion(élémentQuestion) {
-    return function() {
+function boutonsÉditeur(e) {
+    if ('ajouter' in e.target) {
+	var élémentQuestion=e.target.parentElement.previousSibling.previousSibling.previousSibling
 	ajouterQuestion(élémentQuestion.nextSibling.nextSibling.nextSibling,"",false,"",false)
-    }
-}
-
-function créerEnleveurDeQuestion(élémentQuestion) {
-    return function () {
+    } else if ('retirer' in e.target) {
+	var élémentQuestion=e.target.parentElement.previousSibling.previousSibling.previousSibling
 	var élémentBoutonsQuestion=élémentQuestion.nextSibling
 	var élémentRéponse=élémentBoutonsQuestion.nextSibling
 	var élémentBoutonsRéponse=élémentRéponse.nextSibling
@@ -568,10 +586,12 @@ function créerEnleveurDeQuestion(élémentQuestion) {
     }
 }
 
-function créerAjouteurDImage(élémentFile, élémentTexte,boîteÀCocher) {
-    return function () {
-	var fileObject=élémentFile.files[0]
+function inputOnChange(e) {
+    if ('inputImage' in e.target) {
+	var élémentTexte=e.target.parentElement.previousSibling
+	var fileObject=e.target.files[0]
 	var fileReader=new FileReader()
+	var boîteÀCocher=e.target.previousSibling.previousSibling
 	fileReader.addEventListener("load",(event)=>{
 	    try {
 		boîteÀCocher.checked=true
@@ -607,7 +627,9 @@ function miseÀJourVueÉditeur() {
     divÉditeurQuestions.appendChild(labelRéponse)
     var boutonAjouter=document.createElement("button")
     boutonAjouter.appendChild(document.createTextNode("+"))
-    boutonAjouter.addEventListener('click', créerAjouteurDeQuestion(labelQuestion))
+    boutonAjouter.addEventListener('click', (e) => {
+	ajouterQuestion(e.target,"",false,"",false)
+    })
     var nextChild=divÉditeurQuestions.appendChild(boutonAjouter)
     if (cartes!=undefined) {
 	for (var i=0;i<cartes.questions.length; i++) {

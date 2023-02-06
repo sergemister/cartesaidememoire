@@ -23,6 +23,21 @@ p {
     border: thick double #000000;
 }
 
+.imagePrincipale {
+    object-fit: contain;
+    height: 100%;
+    width: 100%;
+    max-width: 480px;
+    max-height: 230px;
+}
+
+.remplirÉcran {
+    width: calc(100vw - 40px);
+    height: calc(100vh - 170px);
+    max-width: unset;
+    max-height: unset;
+}
+
 .divCarte {
     display: grid;
     grid-template-columns: 1fr 2fr 1fr;
@@ -112,14 +127,6 @@ label {
     display: grid;
     grid-template-columns: 1fr 150px 1fr 150px;
     row-gap: 10px;
-}
-
-.imagePrincipale {
-    object-fit: contain;
-    height: 100%;
-    width: 100%;
-    max-width: 480px;
-    max-height: 230px;
 }
 
 .hidden {
